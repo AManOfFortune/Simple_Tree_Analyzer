@@ -1,0 +1,7 @@
+# depslib dependency file v1.0
+1650927588 source:f:\algodat\aufgabe2\programmieraufgabe2\main.cpp
+	<iostream>
+	<fstream>
+	<string>
+	<memory>
+
