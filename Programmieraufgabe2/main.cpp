@@ -15,68 +15,63 @@ struct node
 void printTree(struct node* n) {
     if (n != nullptr) {
         printTree(n->left);
-        std::cout << n->key << "; ";
+        std::cout << n->key << std::endl;
         printTree(n->right);
     }
 }
 
-void insertElement(struct node* root, int key){
-    if (root == nullptr) {
-        root = new struct node;
-        root->key = key;
-        root->left = nullptr;
-        root->right = nullptr;
-
-    } else {
-        struct node* current = root;
-        if (key > current->key){
-            insertElement(current->left, key);
+struct node* insertElement(struct node* n, int key) {
+    if (n == nullptr) {
+        n = new struct node;
+        n->key = key;
+        n->left = nullptr;
+        n->right = nullptr;
+    }
+    else {
+        if (key > n->key) {
+            n->left = insertElement(n->left, key);
         }
-        else{
-            insertElement(current->right, key);
+        else {
+            n->right = insertElement(n->right, key);
         }
     }
-    printTree(root);
+    return n;
 };
 
-void importData(std::string fileName){
-    std::ifstream Inputfile (fileName);
-    std::string helpString;
-    int helpVar;
-    struct node* root = nullptr;
+struct node* importData(std::string fileName, struct node* root) {
+    std::ifstream Inputfile(fileName);
+    std::string line;
 
-    if(Inputfile.is_open()){
-        while (getline(Inputfile, helpString)) {
+    if (Inputfile.is_open()) {
+        while (getline(Inputfile, line)) {
             //Insert new nodes into BST
             //stoi casts String to int
-            helpVar = stoi(helpString);
-            insertElement(root, helpVar);
+            root = insertElement(root, stoi(line));
         }
         Inputfile.close();
     }
-    else{
+    else {
         std::cout << "Unable to open file" << std::endl;
     }
-    printTree(root);
+
+    return root;
 }
 
 int main()
 {
-    std::string fileName = "";
-//min, max and avg are just currently placeholders
+    std::string fileName = "Inputfile.txt";
+    struct node* root = nullptr;
+    //min, max and avg are just currently placeholders
     auto avgPtr = std::make_shared<int>(10);
 
-    //Flag to stop looping if user wants to exit
-    bool loop = true;
-    while (loop) {
+    while (fileName == "") {
         system("cls");
         std::cout << "Insert filename: " << std::endl;
         std::cin >> fileName;
-        if(fileName != ""){
-            break;
-        }
     }
-    importData(fileName);
-//    std::cout << "min:" << minimum << ", max: " << maximum << ", avg: " << avg << std::endl;
+
+    root = importData(fileName, root);
+    printTree(root);
+    //    std::cout << "min:" << minimum << ", max: " << maximum << ", avg: " << avg << std::endl;
     return 0;
 }
