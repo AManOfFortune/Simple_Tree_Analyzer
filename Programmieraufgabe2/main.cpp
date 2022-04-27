@@ -134,19 +134,21 @@ struct node* importData(std::string fileName, struct node* root) {
     return root;
 }
 
-int main()
+int main(int argc, char** argv)
 {
-    //TODO: These variables get taken from console input later, are hardcoded for now
-    int numOfArguments = 2;
-    std::string fileName = "Inputfile.txt";
-    std::string searchName = "Searchfile.txt";
+    int numOfArguments = argc;
+    std::string fileName = argv[1];
+    std::string searchName = argv[argc - 1];
 
     struct node* root = nullptr; //Root of our primary tree
 
     root = importData(fileName, root); //Imports data from file and creates a tree from it
 
+    if (root == nullptr) //If program was unable to open file, quit
+        return 0;
+
     //If we have 1 argument, we want to print its stats
-    if (numOfArguments == 1) {
+    if (numOfArguments == 2) {
         bool isAVL = true; //Gets changed in printTreeStats() if a single AVL violation is found
         int min = 0;
         int max = 0;
@@ -176,6 +178,10 @@ int main()
 
         //Creates a tree from search data-file
         searchRoot = importData(searchName, searchRoot);
+
+        //If program was unable to open file, quit
+        if (searchRoot == nullptr)
+            return 0;
 
         //Bool if tree is only a single node (printing changes)
         //Note: Not needed for compareTrees()!
