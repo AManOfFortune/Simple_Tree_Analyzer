@@ -54,8 +54,8 @@ int printTreeStats(struct node* n, int height_left, int height_right, bool& isAV
     return 0;
 }
 
-//Recursively compares two trees, returns true if second tree was found, false if it was not
-bool compareTrees(struct node* nodeOriginal, struct node* nodeToSearch, std::vector<int>& traversedNodes, bool& rootFound) {
+//Recursively compares two trees, returns true if second tree was found exactly in first, false if not
+bool compareTreesExact(struct node* nodeOriginal, struct node* nodeToSearch, std::vector<int>& traversedNodes, bool& rootFound) {
 
     //Result of each recursion gets saved in this variable
     bool found = false;
@@ -67,9 +67,9 @@ bool compareTrees(struct node* nodeOriginal, struct node* nodeToSearch, std::vec
         //If we have not found the first node of the second tree yet, continue to traverse the main tree until we find the root node
         if (!rootFound) {
             if (nodeOriginal->key < nodeToSearch->key) //Goes left if key is bigger
-                found = compareTrees(nodeOriginal->left, nodeToSearch, traversedNodes, rootFound);
+                found = compareTreesExact(nodeOriginal->left, nodeToSearch, traversedNodes, rootFound);
             else if (nodeOriginal->key > nodeToSearch->key)
-                found = compareTrees(nodeOriginal->right, nodeToSearch, traversedNodes, rootFound);
+                found = compareTreesExact(nodeOriginal->right, nodeToSearch, traversedNodes, rootFound);
         }
         //Once we found the root node, the first part of the recursion will stop, because we set rootFound to true
         //This means that in every following recursion, only this if matters
@@ -80,13 +80,49 @@ bool compareTrees(struct node* nodeOriginal, struct node* nodeToSearch, std::vec
             //If the node to the left of the second tree is not null, see if both left nodes are the same
             //(This will either succeed or fail the above if-check, if it fails found will stay false and get returned as false)
             if (nodeToSearch->left != nullptr) {
-                found = compareTrees(nodeOriginal->left, nodeToSearch->left, traversedNodes, rootFound);
+                found = compareTreesExact(nodeOriginal->left, nodeToSearch->left, traversedNodes, rootFound);
             }
             //If the right node is not null, do the same as above just on the right
             //Here you also need to check if found is still true (if the left node(s) are not found it is false)
             //If this additional check gets removed, the left could return false, but the right returns true and overwrites the false of the left!
             if (nodeToSearch->right != nullptr && found) {
-                found = compareTrees(nodeOriginal->right, nodeToSearch->right, traversedNodes, rootFound);
+                found = compareTreesExact(nodeOriginal->right, nodeToSearch->right, traversedNodes, rootFound);
+            }
+        }
+    }
+
+    //Returns the final state of found
+    return found;
+}
+
+//Recursively compares two trees, returns true if second tree was found in first, false if not
+bool compareTrees(struct node* nodeOriginal, struct node* nodeToSearch, std::vector<int>& traversedNodes) {
+
+    //Result of each recursion gets saved in this variable
+    bool found = false;
+
+    if (nodeOriginal != nullptr) { //If node of the main tree is not empty (if it is empty found stays false and gets returned)
+
+        traversedNodes.push_back(nodeOriginal->key); //Saves the current node in the vector
+
+        //If nodes don't match, traverse main node
+        if (nodeOriginal->key < nodeToSearch->key) //Goes left if key is bigger
+            found = compareTrees(nodeOriginal->left, nodeToSearch, traversedNodes);
+        else if (nodeOriginal->key > nodeToSearch->key)
+            found = compareTrees(nodeOriginal->right, nodeToSearch, traversedNodes);
+        //If nodes do match, traverse second node if it has child nodes
+        else if (nodeOriginal->key == nodeToSearch->key) {
+            found = true; //Found gets set to true, but that might get changed back again to false if child nodes are not found
+
+            //If the node to the left of the second tree is not null, seek the child node in the left branch of the main tree
+            if (nodeToSearch->left != nullptr) {
+                found = compareTrees(nodeOriginal->left, nodeToSearch->left, traversedNodes);
+            }
+            //If the right node is not null, do the same as above just on the right
+            //Here you also need to check if found is still true (if the left node(s) are not found it is false)
+            //If this additional check gets removed, the left could return false, but the right returns true and overwrites the false of the left!
+            if (nodeToSearch->right != nullptr && found) {
+                found = compareTrees(nodeOriginal->right, nodeToSearch->right, traversedNodes);
             }
         }
     }
@@ -138,7 +174,7 @@ int main(int argc, char** argv)
 {
     int numOfArguments = argc;
     std::string fileName = argv[1];
-    std::string searchName = argv[argc - 1];
+    std::string searchName = numOfArguments >= 3 ? argv[2] : "";
 
     struct node* root = nullptr; //Root of our primary tree
 
@@ -170,11 +206,10 @@ int main(int argc, char** argv)
 
         std::cout << "min:" << min << ", max: " << max << ", avg: " << avg << std::endl;
     }
-    //If we have more than 1 argument we want to perform a search
-    else {
+    else { //If we have more than 1 argument we want to perform a search
         struct node* searchRoot = nullptr; //Root of tree to search
         std::vector<int> traversedNodes; //List with traversed nodes to print later
-        bool rootFound = false; //Helper variable for compareTrees function
+        bool rootFound = false; //Helper variable for compareTreesExact function
 
         //Creates a tree from search data-file
         searchRoot = importData(searchName, searchRoot);
@@ -184,11 +219,14 @@ int main(int argc, char** argv)
             return 0;
 
         //Bool if tree is only a single node (printing changes)
-        //Note: Not needed for compareTrees()!
+        //Note: Not needed for compareTrees() methods!
         bool isNoTree = searchRoot->left == nullptr && searchRoot->right == nullptr;
 
-        //CompareTrees() returs true or false depending if tree was found
-        if (compareTrees(root, searchRoot, traversedNodes, rootFound)) {
+        //ADDITIONAL FUNCTIONALITY:
+        //User can append a third argument, then the trees get compared exactly
+        bool found = numOfArguments == 3 ? compareTrees(root, searchRoot, traversedNodes) : compareTreesExact(root, searchRoot, traversedNodes, rootFound);
+
+        if (found) {
             //If tree only 1 node, prints info of single node + the traversed nodes
             if (isNoTree) {
                 std::cout << searchRoot->key << " found";
